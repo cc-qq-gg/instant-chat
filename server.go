@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"sync"
 )
@@ -47,6 +48,7 @@ func (this *Server) ListenMessage() {
 		this.mapLock.Unlock()
 	}
 }
+
 func (this *Server) Handler(conn net.Conn) {
 	// ...当前连接的任务
 	fmt.Println("连接建立成功")
@@ -58,10 +60,30 @@ func (this *Server) Handler(conn net.Conn) {
 
 	// 广播当前用户上线消息
 	this.BoradCast(user, "已上线")
-
-	// 阻塞当前handler，否则当前goroutine会dead，里面的子goroutine也dead
+	// 开启一个gouroutine，接受客户端发送的消息
+	go func() {
+		buf := make([]byte, 4096)
+		// 监听
+		for {
+			n, err := conn.Read(buf)
+			// 报错
+			if err != nil && err != io.EOF {
+				fmt.Println("con read Error", err)
+				return
+			}
+			// 0时，表示用户下线
+			if n == 0 {
+				this.BoradCast(user, "下线")
+				return
+			}
+			// 接受消息，去除结尾/n
+			msg := string(buf[:n-1])
+			// 广播消息
+			this.BoradCast(user, msg)
+		}
+	}()
+	// 阻塞当前handler，否则当前goroutine会关闭，里面的子goroutine也关闭
 	select {}
-
 }
 
 // 启动server
