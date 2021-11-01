@@ -53,13 +53,9 @@ func (this *Server) Handler(conn net.Conn) {
 	// ...当前连接的任务
 	fmt.Println("连接建立成功")
 	// 用户上线，加入到OnlineMap中
-	user := NewUser(conn)
-	this.mapLock.Lock()
-	this.OnlineMap[user.Name] = user
-	this.mapLock.Unlock()
+	user := NewUser(conn, this)
+	user.Online()
 
-	// 广播当前用户上线消息
-	this.BoradCast(user, "已上线")
 	// 开启一个gouroutine，接受客户端发送的消息
 	go func() {
 		buf := make([]byte, 4096)
@@ -73,13 +69,13 @@ func (this *Server) Handler(conn net.Conn) {
 			}
 			// 0时，表示用户下线
 			if n == 0 {
-				this.BoradCast(user, "下线")
+				user.Offline()
 				return
 			}
 			// 接受消息，去除结尾/n
 			msg := string(buf[:n-1])
 			// 广播消息
-			this.BoradCast(user, msg)
+			user.DoMessage(msg)
 		}
 	}()
 	// 阻塞当前handler，否则当前goroutine会关闭，里面的子goroutine也关闭
