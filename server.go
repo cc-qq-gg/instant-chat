@@ -5,6 +5,7 @@ import (
 	"io"
 	"net"
 	"sync"
+	"time"
 )
 
 type Server struct {
@@ -55,7 +56,8 @@ func (this *Server) Handler(conn net.Conn) {
 	// 用户上线，加入到OnlineMap中
 	user := NewUser(conn, this)
 	user.Online()
-
+	// 监听用户活跃的channel
+	isLive := make(chan bool)
 	// 开启一个gouroutine，接受客户端发送的消息
 	go func() {
 		buf := make([]byte, 4096)
@@ -76,10 +78,32 @@ func (this *Server) Handler(conn net.Conn) {
 			msg := string(buf[:n-1])
 			// 广播消息
 			user.DoMessage(msg)
+
+			// 用户发送消息，代表其处于活跃状态
+			isLive <- true
 		}
 	}()
 	// 阻塞当前handler，否则当前goroutine会关闭，里面的子goroutine也关闭
-	select {}
+	for {
+		select {
+		case <-isLive:
+			// 当前用户活跃，重置定时器
+			// 不在任何事，为了激活select，更新下面的定时器
+		case <-time.After(time.Second * 10):
+			// 已经过时
+			// 下线用户
+			user.SendMsg("你被下线")
+			user.server.mapLock.Lock()
+			delete(user.server.OnlineMap, user.Name)
+			user.server.mapLock.Unlock()
+			// 销毁资源
+			close(user.C)
+			// 关闭连接
+			conn.Close()
+			// 退出当前handler
+			return // or runtime.Goexit()
+		}
+	}
 }
 
 // 启动server
