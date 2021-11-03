@@ -1,6 +1,9 @@
 package main
 
-import "net"
+import (
+	"net"
+	"strings"
+)
 
 type User struct {
 	Name   string
@@ -55,18 +58,42 @@ func (this *User) Rename(newName string) {
 		this.SendMsg("修改成功，当前用户名：" + newName + "\n")
 	}
 }
+func (this *User) PriviteChat(msg string) {
+	// 获取to用户名
+	toUserName := strings.Split(msg, "|")[1]
+	if toUserName == "" {
+		this.SendMsg("消息格式不正确，请使用\"to|张三|消息\"的格式")
+		return
+	}
+	toUser, ok := this.server.OnlineMap[toUserName]
+	if !ok {
+		this.SendMsg("该用户不存" + "\n")
+		return
+	}
+	toMsg := strings.Split(msg, "|")[2]
+	if toMsg == "" {
+		this.SendMsg("请输入消息内容" + "\n")
+		return
+	}
+	toUser.SendMsg(toMsg)
+}
+func (this *User) GetOnlineUsers() {
+	this.server.mapLock.Lock()
+	for _, user := range this.server.OnlineMap {
+		this.C <- "[" + user.Addr + "] " + user.Name + "online...\n"
+	}
+	this.server.mapLock.Unlock()
+}
 
 // 用户广播消息业务
 func (this *User) DoMessage(msg string) {
 	// 查询在线用户，并返回给当前用户
 	if msg == "who" {
-		this.server.mapLock.Lock()
-		for _, user := range this.server.OnlineMap {
-			this.C <- "[" + user.Addr + "] " + user.Name + "online...\n"
-		}
-		this.server.mapLock.Unlock()
+		this.GetOnlineUsers()
 	} else if len(msg) > 7 && msg[:7] == "rename|" {
 		this.Rename(msg)
+	} else if len(msg) > 3 && msg[:3] == "to|" {
+		this.PriviteChat(msg)
 	} else {
 		this.server.BoradCast(this, msg)
 	}
