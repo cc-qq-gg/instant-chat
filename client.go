@@ -3,7 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"net"
+	"os"
 )
 
 type Client struct {
@@ -50,6 +52,31 @@ func (client *Client) menu() bool {
 	}
 }
 
+func (client *Client) UpdateName() bool {
+	fmt.Println("请输入用户名：")
+	fmt.Scanln(&client.Name)
+
+	sendMsg := "rename|" + client.Name + "\n"
+	_, err := client.conn.Write([]byte(sendMsg))
+	if err != nil {
+		fmt.Println("con.Write error: ", err)
+		return false
+	}
+	return true
+}
+
+// 处理server返回消息，显示到标准输出
+func (client *Client) DealResponse() {
+	// 永久阻塞，等同于下面for循环
+	// 一旦client.conn有数据，就直接copy到stout标准输出
+	io.Copy(os.Stdout, client.conn)
+	// for {
+	// 	buf := make([]byte, 1024)
+	// 	client.conn.Read(buf)
+	// 	fmt.Print(buf)
+	// }
+}
+
 func (client *Client) Run() {
 	for client.flag != 0 {
 		for client.menu() != true {
@@ -64,7 +91,7 @@ func (client *Client) Run() {
 			fmt.Println("私聊模式")
 			break
 		case 3:
-			fmt.Println("修改用户名")
+			client.UpdateName()
 			break
 		case 0:
 			fmt.Println("退出")
@@ -93,6 +120,10 @@ func main() {
 		return
 	}
 	fmt.Println(">>>>连接成功")
+
+	// 单独开启一个goroutine处理server返回的消息
+	go client.DealResponse()
+
 	// 启动客户端业务
 	client.Run()
 }
