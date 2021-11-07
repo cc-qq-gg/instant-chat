@@ -67,8 +67,8 @@ func (client *Client) UpdateName() bool {
 
 // 处理server返回消息，显示到标准输出
 func (client *Client) DealResponse() {
-	// 永久阻塞，等同于下面for循环
 	// 一旦client.conn有数据，就直接copy到stout标准输出
+	// 永久阻塞，等同于下面for循环
 	io.Copy(os.Stdout, client.conn)
 	// for {
 	// 	buf := make([]byte, 1024)
@@ -77,15 +77,36 @@ func (client *Client) DealResponse() {
 	// }
 }
 
+func (client *Client) PublicChat() {
+	var chatMsg string
+	// 提示用户输入信息
+	fmt.Printf(">>>>请输入聊天内容, 输入exit退出\n")
+	fmt.Scanln(&chatMsg)
+
+	for chatMsg != "exit" {
+		// 消息不为空时发送
+		if len(chatMsg) != 0 {
+			sendMsg := chatMsg + "\n"
+			_, err := client.conn.Write([]byte(sendMsg))
+			if err != nil {
+				fmt.Printf("conn.write error: %v", err)
+				break
+			}
+		}
+		chatMsg = ""
+		fmt.Printf(">>>>请输入聊天内容, 输入exit退出\n")
+		fmt.Scanln(&chatMsg)
+	}
+}
+
 func (client *Client) Run() {
 	for client.flag != 0 {
 		for client.menu() != true {
-
 		}
 		// 根据不同模式处理不同的业务
 		switch client.flag {
 		case 1:
-			fmt.Println("群聊模式")
+			client.PublicChat()
 			break
 		case 2:
 			fmt.Println("私聊模式")
