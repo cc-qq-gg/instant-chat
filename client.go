@@ -99,6 +99,49 @@ func (client *Client) PublicChat() {
 	}
 }
 
+func (client *Client) ShowOnlineUsers() {
+	sendMsg := "who\n"
+	_, err := client.conn.Write([]byte(sendMsg))
+	if err != nil {
+		fmt.Printf("ShowOnlineUsers conn.write error: %v", err)
+		return
+	}
+}
+
+func (client *Client) PrivateChat() {
+	// 选择私聊的用户名
+	var remoteName string
+	var chatMsg string
+	// 展示在线用户
+	client.ShowOnlineUsers()
+	fmt.Printf(">>>>请输入用户名, 输入exit退出\n")
+	fmt.Scanln(&remoteName)
+
+	for remoteName != "exit" {
+		fmt.Printf(">>>>请输入消息内容, 输入exit退出\n")
+		fmt.Scanln(&chatMsg)
+
+		for chatMsg != "exit" {
+			// 消息不为空发送
+			if len(remoteName) != 0 {
+				sendMsg := "to|" + remoteName + "|" + chatMsg + "\n\n"
+				_, err := client.conn.Write([]byte(sendMsg))
+				if err != nil {
+					fmt.Println("PriviteChat.conn.write.error", err)
+					break
+				}
+			}
+			chatMsg = ""
+			fmt.Printf(">>>>请输入消息内容, 输入exit退出\n")
+			fmt.Scanln(&chatMsg)
+		}
+		client.ShowOnlineUsers()
+		fmt.Printf(">>>>请输入用户名, 输入exit退出\n")
+		fmt.Scanln(&remoteName)
+	}
+
+}
+
 func (client *Client) Run() {
 	for client.flag != 0 {
 		for client.menu() != true {
@@ -106,16 +149,15 @@ func (client *Client) Run() {
 		// 根据不同模式处理不同的业务
 		switch client.flag {
 		case 1:
+			// 群聊模式
 			client.PublicChat()
 			break
 		case 2:
-			fmt.Println("私聊模式")
+			// 私聊模式
+			client.PrivateChat()
 			break
 		case 3:
 			client.UpdateName()
-			break
-		case 0:
-			fmt.Println("退出")
 			break
 		}
 	}

@@ -80,7 +80,7 @@ func (this *User) PriviteChat(msg string) {
 func (this *User) GetOnlineUsers() {
 	this.server.mapLock.Lock()
 	for _, user := range this.server.OnlineMap {
-		this.C <- "[" + user.Addr + "] " + user.Name + "online...\n"
+		this.C <- "[" + user.Addr + "] " + user.Name + ":online...\n"
 	}
 	this.server.mapLock.Unlock()
 }
