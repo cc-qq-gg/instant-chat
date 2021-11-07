@@ -1,3 +1,4 @@
+##### [B站视频](https://www.bilibili.com/video/BV1gf4y1r79E?p=52&spm_id_from=pageDriver)
 ### 1.构建基础server，监听连接
 > window build 需要加exe，否则无法执行
 > 测试tcp连接，可以直接用浏览器访问
@@ -13,6 +14,7 @@
 ### 4.业务层封装
 ### 5.修改用户名
 ### 6.用户超时下线
+> 这个功能，存在一个问题，当一个用户被下线后，会报一个错，`use of closed network connection cause`, 然后cpu占用率飙升，目前还没有解决
 ### 7.私聊
 ### 8.实现客户端client
 ### 9.设置命令行参数并解析参数
