@@ -11,6 +11,7 @@ type Client struct {
 	ServerPort int
 	Name       string
 	conn       net.Conn
+	flag       int
 }
 
 func NewClient(serverIp string, serverPort int) *Client {
@@ -18,6 +19,7 @@ func NewClient(serverIp string, serverPort int) *Client {
 	client := &Client{
 		ServerIp:   serverIp,
 		ServerPort: serverPort,
+		flag:       9999,
 	}
 	// 连接server
 	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", serverIp, serverPort))
@@ -27,6 +29,48 @@ func NewClient(serverIp string, serverPort int) *Client {
 	}
 	client.conn = conn
 	return client
+}
+
+func (client *Client) menu() bool {
+	var flag int
+
+	fmt.Println("1.群聊模式")
+	fmt.Println("2.私聊模式")
+	fmt.Println("3.修改用户名")
+	fmt.Println("0.退出")
+
+	fmt.Scanln(&flag)
+
+	if flag >= 0 && flag <= 3 {
+		client.flag = flag
+		return true
+	} else {
+		fmt.Println(">>>>>请输入合法范围内的数字<<<<")
+		return false
+	}
+}
+
+func (client *Client) Run() {
+	for client.flag != 0 {
+		for client.menu() != true {
+
+		}
+		// 根据不同模式处理不同的业务
+		switch client.flag {
+		case 1:
+			fmt.Println("群聊模式")
+			break
+		case 2:
+			fmt.Println("私聊模式")
+			break
+		case 3:
+			fmt.Println("修改用户名")
+			break
+		case 0:
+			fmt.Println("退出")
+			break
+		}
+	}
 }
 
 // 每个go文件中都有init函数
@@ -50,5 +94,5 @@ func main() {
 	}
 	fmt.Println(">>>>连接成功")
 	// 启动客户端业务
-	select {}
+	client.Run()
 }
